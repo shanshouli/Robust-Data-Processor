@@ -143,7 +143,6 @@ resource "aws_lambda_function" "ingest" {
 
   environment {
     variables = {
-      AWS_REGION           = var.aws_region
       SQS_QUEUE_URL        = aws_sqs_queue.log_ingest_queue.id
       DYNAMODB_TABLE_NAME  = aws_dynamodb_table.tenant_logs.name
     }
@@ -164,7 +163,6 @@ resource "aws_lambda_function" "worker" {
 
   environment {
     variables = {
-      AWS_REGION          = var.aws_region
       DYNAMODB_TABLE_NAME = aws_dynamodb_table.tenant_logs.name
     }
   }
