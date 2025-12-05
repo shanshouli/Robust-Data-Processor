@@ -152,7 +152,7 @@ def test_handler_processes_records(monkeypatch: pytest.MonkeyPatch) -> None:
     event = {"Records": [{"body": message.json()}]}
 
     # Mock configuration and client initialization
-    monkeypatch.setattr(worker, "get_settings", lambda: settings)
+    monkeypatch.setattr(worker, "get_worker_settings", lambda: settings)
     monkeypatch.setattr(worker, "get_clients", lambda _settings: {"dynamodb": fake_dynamo})
 
     # Invoke the Lambda handler

@@ -23,7 +23,7 @@ from typing import Any, Dict, List
 import boto3
 from botocore.exceptions import BotoCoreError, ClientError
 
-from app.config import Settings, get_settings
+from app.config import WorkerSettings, get_worker_settings
 from app.models import InternalMessage
 
 logger = logging.getLogger(__name__)
@@ -52,7 +52,7 @@ def redact_text(text: str) -> str:
     return PHONE_PATTERN.sub("[REDACTED]", text)
 
 
-def get_clients(settings: Settings) -> Dict[str, Any]:
+def get_clients(settings: WorkerSettings) -> Dict[str, Any]:
     """Initialize AWS service clients.
     
     Creates and returns a dictionary of AWS service clients needed for
@@ -69,7 +69,7 @@ def get_clients(settings: Settings) -> Dict[str, Any]:
     return {"dynamodb": dynamodb}
 
 
-def process_message(message: InternalMessage, settings: Settings, clients: Dict[str, Any]) -> None:
+def process_message(message: InternalMessage, settings: WorkerSettings, clients: Dict[str, Any]) -> None:
     """Simulate heavy processing and persist results to DynamoDB.
     
     This function represents the core log processing logic:
@@ -171,7 +171,7 @@ def handler(event: Dict[str, Any], context: Any) -> None:
         Exception: Any processing error, triggering SQS retry mechanism
     """
     # Load configuration and initialize AWS clients
-    settings = get_settings()
+    settings = get_worker_settings()
     clients = get_clients(settings)
 
     # Extract SQS records from the event (batch can contain multiple messages)
