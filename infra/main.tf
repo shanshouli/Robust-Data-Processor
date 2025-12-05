@@ -136,7 +136,7 @@ resource "aws_lambda_function" "ingest" {
   filename      = local.ingest_zip
   source_code_hash = filebase64sha256(local.ingest_zip)
   role              = aws_iam_role.ingest_role.arn
-  handler           = "app.main.handler"
+  handler           = "main.handler"
   runtime           = "python3.11"
   timeout           = 10
   memory_size       = 256
@@ -156,7 +156,7 @@ resource "aws_lambda_function" "worker" {
   filename      = local.worker_zip
   source_code_hash = filebase64sha256(local.worker_zip)
   role              = aws_iam_role.worker_role.arn
-  handler           = "app.worker_handler.handler"
+  handler           = "worker_handler.handler"
   runtime           = "python3.11"
   timeout           = 300
   memory_size       = 256

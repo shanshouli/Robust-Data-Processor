@@ -260,29 +260,29 @@ if random.random() < 0.05:  # 5% probability
 ### What Happens When a Crash Occurs
 
 ```
-┌──────────────────────┐
-│ Worker crashes (5%)  │
-└──────────┬───────────┘
-           │
-           ▼
-┌──────────────────────────────────────┐
-│ SQS Message Visibility Timeout       │
-│ (300 seconds)                        │
-└──────────┬───────────────────────────┘
-           │
-           ▼
-┌──────────────────────────────────────┐
-│ Message becomes visible again        │
-│ Retry Attempt 1 → 2 → 3 → 4 → 5      │
-└──────────┬───────────────────────────┘
-           │
-           ▼
-     ┌─────────┐
-     │Success? │
-     └────┬────┘
-     Yes  │  No (after 5 retries)
-          │
-          ▼
+              ┌──────────────────────┐
+              │ Worker crashes (5%)  │
+              └──────────┬───────────┘
+                         │
+                         ▼
+      ┌──────────────────────────────────────┐
+      │ SQS Message Visibility Timeout       │
+      │ (300 seconds)                        │
+      └──────────────────┬───────────────────┘
+                         │
+                         ▼
+      ┌──────────────────────────────────────┐
+      │ Message becomes visible again        │
+      │ Retry Attempt 1 → 2 → 3 → 4 → 5      │
+      └──────────────────┬───────────────────┘
+                         │
+                         ▼
+                    ┌─────────┐
+                    │Success? │
+                    └────┬────┘
+                    Yes  │  No (after 5 retries)
+                         │
+                         ▼
 ┌─────────────────────┐     ┌──────────────────┐
 │ Message Deleted     │     │ Move to DLQ      │
 │ (Processing Done)   │     │ (Manual Review)  │

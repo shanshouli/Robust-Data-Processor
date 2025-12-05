@@ -59,7 +59,7 @@ def get_sqs_client(settings: Settings) -> boto3.client:
 )
 async def ingest(
     request: Request,
-    x_tenant_id: Optional[str] = Header(default=None, convert_underscores=False),
+    x_tenant_id: Optional[str] = Header(default=None),
     settings: Settings = Depends(get_settings),
 ) -> EnqueueResponse:
     """
