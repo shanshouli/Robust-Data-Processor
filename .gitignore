@@ -1,24 +1,8 @@
 # macOS
 .DS_Store
 
-# Python
-__pycache__/
-*.py[cod]
-*.pyc
-*.pyo
-
 # Lambda Deployment Packages
 dist/
-
-# Virtual Environment
-venv/
-env/
-ENV/
-
-# Testing
-.pytest_cache/
-.coverage
-.coverage.*
 
 # Environment Variables
 .env

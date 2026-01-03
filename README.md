@@ -1,43 +1,46 @@
-# 🚀 Robust Data Processor - Multi-Tenant Log Ingestion System
+# Robust Data Processor - Multi-Tenant Log Ingestion System
 
-[![Python](https://img.shields.io/badge/Python-3.11-blue.svg)](https://www.python.org/)
+[![Go](https://img.shields.io/badge/Go-1.21-00ADD8.svg)](https://go.dev/)
 [![AWS](https://img.shields.io/badge/AWS-Lambda%20%7C%20SQS%20%7C%20DynamoDB-orange.svg)](https://aws.amazon.com/)
-[![Terraform](https://img.shields.io/badge/Infrastructure-Terraform-purple.svg)](https://www.terraform.io/)
-[![FastAPI](https://img.shields.io/badge/Framework-FastAPI-green.svg)](https://fastapi.tiangolo.com/)
+[![Terraform](https://img.shields.io/badge/Infrastructure-Terraform-623CE4.svg)](https://www.terraform.io/)
+[![Runtime](https://img.shields.io/badge/Runtime-AWS%20Lambda%20AL2023-blue.svg)](https://aws.amazon.com/lambda/)
 
-A scalable, robust, serverless API backend designed to ingest massive streams of unstructured logs from diverse sources, process them asynchronously, and store them securely with strict multi-tenant isolation.
+A scalable, robust, serverless API backend built in Go to ingest massive streams of unstructured logs, process them asynchronously, and store them securely with strict multi-tenant isolation.
 
-## 📋 Table of Contents
+## Table of Contents
 
-- [Overview](#-overview)
-- [Architecture](#-architecture)
-- [Features](#-features)
-- [Technology Stack](#-technology-stack)
-- [Data Flow](#-data-flow)
-- [Crash Simulation](#-crash-simulation)
-- [Prerequisites](#-prerequisites)
-- [Installation](#-installation)
-- [Deployment](#-deployment)
-- [API Documentation](#-api-documentation)
-- [Testing](#-testing)
-- [Project Structure](#-project-structure)
-- [Configuration](#-configuration)
-- [Monitoring](#-monitoring)
+- [Overview](#overview)
+- [Architecture](#architecture)
+- [Features](#features)
+- [Technology Stack](#technology-stack)
+- [Data Flow](#data-flow)
+- [Crash Simulation](#crash-simulation)
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [Deployment](#deployment)
+- [API Documentation](#api-documentation)
+- [Testing](#testing)
+- [Project Structure](#project-structure)
+- [Configuration](#configuration)
+- [Monitoring](#monitoring)
+- [Security Considerations](#security-considerations)
+- [Troubleshooting](#troubleshooting)
+- [Performance Benchmarks](#performance-benchmarks)
 
-## 🎯 Overview
+## Overview
 
-This system implements a **Multi-Tenant, Event-Driven Pipeline** on AWS that normalizes chaotic data inputs into a clean, resilient stream. It can handle **1,000+ RPM** (Requests Per Minute) while maintaining strict tenant isolation and graceful failure recovery.
+This system implements a multi-tenant, event-driven pipeline on AWS that normalizes chaotic data inputs into a clean, resilient stream. It can handle high request volume while maintaining strict tenant isolation and graceful failure recovery.
 
 ### Key Capabilities
 
-- **Unified Ingestion Gateway**: Single `/ingest` endpoint handling multiple data formats
-- **Multi-Tenant Isolation**: Physical data separation using DynamoDB partition keys
-- **Asynchronous Processing**: Non-blocking API with background worker processing
-- **High Availability**: Survives worker crashes with automatic retry and dead-letter queue
-- **Serverless Architecture**: Auto-scales to zero, pay only for what you use
-- **Infrastructure as Code**: Fully automated deployment with Terraform
+- Unified ingestion gateway: single `/ingest` endpoint handling multiple data formats
+- Multi-tenant isolation: DynamoDB partition keys enforce physical separation
+- Asynchronous processing: non-blocking API with background worker processing
+- High availability: survives worker crashes with automatic retry and dead-letter queue
+- Serverless architecture: auto-scales to zero, pay only for what you use
+- Infrastructure as Code: fully automated deployment with Terraform
 
-## 🏗️ Architecture
+## Architecture
 
 ### System Architecture Diagram
 
@@ -58,7 +61,7 @@ This system implements a **Multi-Tenant, Event-Driven Pipeline** on AWS that nor
                                │
                                ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
-│              Lambda Function (Ingest Handler)                           │
+│              Lambda Function (Ingest Handler, Go)                       │
 │  ┌────────────────────────────────────────────────────────────┐         │
 │  │  1. Validate Content-Type                                  │         │
 │  │  2. Extract tenant_id (from JSON body or X-Tenant-ID)      │         │
@@ -72,9 +75,9 @@ This system implements a **Multi-Tenant, Event-Driven Pipeline** on AWS that nor
                                ▼
            ┌───────────────────────────────────────┐
            │     AWS SQS Queue (Message Broker)    │
-           │  • Visibility Timeout: 300s           │
-           │  • Max Receive Count: 5               │
-           │  • Dead Letter Queue (DLQ) enabled    │
+           │  - Visibility Timeout: 300s           │
+           │  - Max Receive Count: 5               │
+           │  - Dead Letter Queue (DLQ) enabled    │
            └───────────┬───────────────────────────┘
                        │
                        │ Batch Size: 5
@@ -82,13 +85,13 @@ This system implements a **Multi-Tenant, Event-Driven Pipeline** on AWS that nor
                        │
                        ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
-│              Lambda Function (Worker Handler)                           │
+│              Lambda Function (Worker Handler, Go)                       │
 │  ┌────────────────────────────────────────────────────────────┐         │
 │  │  1. Receive message batch from SQS                         │         │
 │  │  2. Deserialize InternalMessage                            │         │
 │  │  3. Simulate crash (5% probability)                        │         │
 │  │  4. Heavy processing (0.05s per character)                 │         │
-│  │  5. Redact PII (phone numbers → [REDACTED])                │         │
+│  │  5. Redact PII (phone numbers -> [REDACTED])               │         │
 │  │  6. Conditional write to DynamoDB (idempotency)            │         │
 │  └────────────────────────────────────────────────────────────┘         │
 └──────────────────────────────┬──────────────────────────────────────────┘
@@ -114,148 +117,142 @@ This system implements a **Multi-Tenant, Event-Driven Pipeline** on AWS that nor
 
 Both JSON and plain text requests are normalized into a unified internal format before being enqueued:
 
-```python
-# JSON Request
+```json
+// JSON Request
 {
   "tenant_id": "acme",
   "log_id": "123",
   "text": "User 555-0199 accessed system"
 }
 
-# Plain Text Request
-Headers: 
-  Content-Type: text/plain
-  X-Tenant-ID: acme
-Body: "User 555-0199 accessed system"
+// Plain Text Request
+// Headers:
+//   Content-Type: text/plain
+//   X-Tenant-ID: acme
+// Body: "User 555-0199 accessed system"
 
-# Both convert to Internal Message Format
-InternalMessage(
-  tenant_id="acme",
-  log_id="123",  # auto-generated for text
-  source="json_upload" | "text_upload",
-  text="User 555-0199 accessed system",
-  received_at=datetime.utcnow()
-)
+// Internal Message Format (sent to SQS)
+{
+  "tenant_id": "acme",
+  "log_id": "123",
+  "source": "json_upload",
+  "text": "User 555-0199 accessed system",
+  "received_at": "2024-01-01T00:00:00Z"
+}
 ```
 
-This normalization happens in the **Ingest Lambda** before enqueueing to SQS, ensuring the **Worker Lambda** processes all messages uniformly, regardless of origin.
+This normalization happens in the ingest Lambda before enqueueing to SQS, ensuring the worker Lambda processes all messages uniformly, regardless of origin.
 
-## ✨ Features
+## Features
 
 ### 1. Unified Ingestion API
 
-- **Single Endpoint**: `POST /ingest` handles all ingestion
-- **Multi-Format Support**: 
+- Single endpoint: `POST /ingest` handles all ingestion
+- Multi-format support:
   - JSON (`application/json`) with `tenant_id`, `text`, optional `log_id`
   - Plain text (`text/plain`) with `X-Tenant-ID` header
-- **Non-Blocking**: Returns `202 Accepted` immediately after enqueueing
-- **High Throughput**: Designed to handle 1,000+ RPM
+- Non-blocking: returns `202 Accepted` immediately after enqueueing
+- High throughput: designed to handle high RPM
 
 ### 2. Strict Multi-Tenant Isolation
 
-- **Physical Separation**: DynamoDB partition keys ensure tenant data is stored in separate physical partitions
-- **No Data Leakage**: Impossible to accidentally query across tenants
-- **Scalable**: Each tenant can scale independently
+- Physical separation: DynamoDB partition keys ensure tenant data is stored in separate partitions
+- No data leakage: you must specify tenant_id to query
+- Scalable: each tenant scales independently
 
 ### 3. Robust Error Handling
 
-- **Automatic Retries**: Failed messages are retried up to 5 times
-- **Dead Letter Queue**: Permanently failed messages move to DLQ for investigation
-- **Idempotency**: Conditional writes prevent duplicate processing on retries
-- **Crash Simulation**: Built-in chaos engineering for testing resilience
+- Automatic retries: failed messages are retried up to 5 times
+- Dead letter queue: permanently failed messages move to DLQ for investigation
+- Idempotency: conditional writes prevent duplicate processing on retries
+- Crash simulation: built-in chaos testing for resilience
 
 ### 4. Serverless and Cost-Effective
 
-- **Auto-Scaling**: From 0 to 1000+ concurrent executions
-- **Pay-Per-Use**: No idle costs
-- **Managed Services**: No server maintenance required
+- Auto-scaling: from 0 to high concurrency
+- Pay-per-use: no idle costs
+- Managed services: no server maintenance required
 
 ### 5. Security and Compliance
 
-- **PII Redaction**: Automatic masking of phone numbers (extensible to other PII)
-- **Audit Trail**: Original text preserved for compliance
-- **Encryption**: Data encrypted at rest (DynamoDB) and in transit (HTTPS)
+- PII redaction: automatic masking of phone numbers (extensible)
+- Audit trail: original text preserved for compliance
+- Encryption: data encrypted at rest (DynamoDB) and in transit (HTTPS)
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 | Layer | Technology | Purpose |
 |-------|-----------|---------|
-| **API Framework** | FastAPI | High-performance async web framework |
-| **API Gateway** | AWS API Gateway (HTTP API) | RESTful endpoint exposure |
-| **Compute** | AWS Lambda | Serverless function execution |
-| **Message Broker** | AWS SQS | Asynchronous message queue |
-| **Database** | AWS DynamoDB | NoSQL database with partition-based isolation |
-| **Lambda Adapter** | Mangum | ASGI-to-Lambda adapter for FastAPI |
-| **IaC** | Terraform | Infrastructure as Code |
-| **Language** | Python 3.11 | Modern Python with type hints |
-| **Validation** | Pydantic | Data validation and serialization |
-| **Testing** | pytest | Unit and integration testing |
+| API Handling | aws-lambda-go | API Gateway HTTP API integration |
+| Compute | AWS Lambda | Serverless function execution |
+| Message Broker | AWS SQS | Asynchronous message queue |
+| Database | AWS DynamoDB | NoSQL database with partition-based isolation |
+| SDK | AWS SDK for Go v2 | AWS service integration |
+| IaC | Terraform | Infrastructure as Code |
+| Language | Go 1.21 | Lambda implementation |
+| Testing | go test | Unit and integration testing |
 
-## 🔄 Data Flow
+## Data Flow
 
 ### 1. Ingestion Phase (Synchronous)
 
 ```
-Client → API Gateway → Ingest Lambda → SQS Queue → Return 202
+Client -> API Gateway -> Ingest Lambda -> SQS Queue -> Return 202
 ```
-
-**Duration**: < 100ms (non-blocking)
 
 ### 2. Processing Phase (Asynchronous)
 
 ```
-SQS Queue → Worker Lambda → Process → DynamoDB
+SQS Queue -> Worker Lambda -> Process -> DynamoDB
 ```
-
-**Duration**: Variable (0.05s per character + redaction time)
 
 ### 3. Example End-to-End Flow
 
 ```
 1. Client sends: POST /ingest
    Body: {"tenant_id": "acme", "text": "User 555-0199 logged in"}
-   
+
 2. Ingest Lambda:
    - Validates JSON
    - Generates log_id: "uuid-abc-123"
    - Creates InternalMessage
    - Enqueues to SQS
-   - Returns: {"status": "enqueued", "tenant_id": "acme", "log_id": "uuid-abc-123"}
-   
+   - Returns: {"status":"enqueued","tenant_id":"acme","log_id":"uuid-abc-123"}
+
 3. SQS Queue:
    - Holds message until worker is available
    - Retries on failure
-   
+
 4. Worker Lambda:
    - Dequeues message
-   - Simulates heavy processing (5 chars × 0.05s = 0.25s)
+   - Simulates heavy processing (5 chars x 0.05s = 0.25s)
    - Redacts: "User [REDACTED] logged in"
    - Writes to DynamoDB with tenant_id="acme" partition
-   
+
 5. DynamoDB:
    - Stores original and redacted text
    - Data physically isolated by tenant_id
 ```
 
-## 💥 Crash Simulation
+## Crash Simulation
 
 ### How It Works
 
-The system includes **deliberate chaos engineering** to test resilience under failure conditions:
+The system includes deliberate chaos engineering to test resilience under failure conditions:
 
-```python
-# In worker_handler.py, line 96-98
-if random.random() < 0.05:  # 5% probability
-    logger.error("Simulated worker crash for log_id=%s", message.log_id)
-    raise RuntimeError("Simulated worker crash")
+```go
+// In cmd/worker/main.go
+if rand.Float64() < 0.05 { // 5% probability
+    return errors.New("simulated worker crash")
+}
 ```
 
 ### Why We Simulate Crashes
 
-1. **Test Retry Mechanisms**: Ensures SQS retry logic works correctly
-2. **Validate Idempotency**: Confirms duplicate processing prevention
-3. **Verify DLQ Routing**: Tests that permanently failed messages reach the dead-letter queue
-4. **Demonstrate Resilience**: Shows the system gracefully recovers from failures
+1. Test retry mechanisms
+2. Validate idempotency
+3. Verify DLQ routing
+4. Demonstrate resilience
 
 ### What Happens When a Crash Occurs
 
@@ -273,7 +270,7 @@ if random.random() < 0.05:  # 5% probability
                          ▼
       ┌──────────────────────────────────────┐
       │ Message becomes visible again        │
-      │ Retry Attempt 1 → 2 → 3 → 4 → 5      │
+      │ Retry Attempt 1 -> 2 -> 3 -> 4 -> 5  │
       └──────────────────┬───────────────────┘
                          │
                          ▼
@@ -291,28 +288,21 @@ if random.random() < 0.05:  # 5% probability
 
 ### Idempotency Protection
 
-Even with retries, each log is processed **exactly once** thanks to conditional writes:
+Even with retries, each log is processed exactly once thanks to conditional writes:
 
-```python
-# Conditional expression prevents duplicates
-clients["dynamodb"].put_item(
-    TableName=settings.dynamodb_table_name,
-    Item=item,
-    ConditionExpression="attribute_not_exists(tenant_id) AND attribute_not_exists(log_id)"
-)
+```go
+ConditionExpression: stringPtr("attribute_not_exists(tenant_id) AND attribute_not_exists(log_id)")
 ```
 
-If a message is retried, the conditional write will fail gracefully, preventing duplicate records.
+## Prerequisites
 
-## 📦 Prerequisites
+- AWS account with Lambda, SQS, DynamoDB, API Gateway permissions
+- Terraform >= 1.0
+- Go 1.21+
+- AWS CLI configured with credentials
+- zip command-line tool
 
-- **AWS Account** with appropriate permissions (Lambda, SQS, DynamoDB, API Gateway)
-- **Terraform** >= 1.0
-- **Python** 3.11+
-- **AWS CLI** configured with credentials
-- **zip** command-line tool
-
-## 🚀 Installation
+## Installation
 
 ### 1. Clone the Repository
 
@@ -321,65 +311,34 @@ git clone <repository-url>
 cd memory-machine
 ```
 
-### 2. Install Python Dependencies
+### 2. Download Go Dependencies
 
 ```bash
-pip install -r requirements.txt
+go mod download
 ```
 
-### 3. Run Tests (Optional)
-
-```bash
-pytest tests/ -v
-```
-
-Expected output:
-```
-tests/test_main.py::test_ingest_json_success PASSED
-tests/test_main.py::test_ingest_text_plain_success PASSED
-tests/test_main.py::test_ingest_missing_tenant_header_returns_400 PASSED
-tests/test_worker_handler.py::test_process_message_writes_redacted_text PASSED
-tests/test_worker_handler.py::test_process_message_is_idempotent PASSED
-tests/test_worker_handler.py::test_handler_processes_records PASSED
-```
-
-## 🌐 Deployment
+## Deployment
 
 ### Step 1: Package Lambda Functions
 
-Create deployment packages for both Lambda functions:
+Create deployment packages for both Lambda functions. The custom runtime expects a `bootstrap` binary at the root of the zip file.
 
 ```bash
-# Create dist directory
-mkdir -p dist
+mkdir -p dist/ingest dist/worker
 
-# Package Ingest Lambda
-cd dist
-mkdir -p ingest
-cd ingest
-pip install -r ../../requirements.txt -t .
-cp -r ../../app/* .
-zip -r ../ingest.zip .
-cd ..
+GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o dist/ingest/bootstrap ./cmd/ingest
+(cd dist/ingest && zip -r ../ingest-go.zip bootstrap)
 
-# Package Worker Lambda (same dependencies, different handler)
-cp ingest.zip worker.zip
-
-cd ..
+GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o dist/worker/bootstrap ./cmd/worker
+(cd dist/worker && zip -r ../worker-go.zip bootstrap)
 ```
 
 ### Step 2: Deploy Infrastructure with Terraform
 
 ```bash
 cd infra
-
-# Initialize Terraform
 terraform init
-
-# Review the execution plan
 terraform plan
-
-# Apply the configuration
 terraform apply
 ```
 
@@ -400,8 +359,6 @@ https://abc123def.execute-api.us-west-1.amazonaws.com
 
 ### Step 4: Verify Deployment
 
-Test the API endpoint:
-
 ```bash
 # Test JSON ingestion
 curl -X POST https://your-api-url.amazonaws.com/ingest \
@@ -409,7 +366,7 @@ curl -X POST https://your-api-url.amazonaws.com/ingest \
   -d '{"tenant_id": "acme", "text": "User 555-0199 accessed system"}'
 
 # Expected response (202 Accepted):
-# {"status":"enqueued","tenant_id":"acme","log_id":"uuid-...", "request_id":"..."}
+# {"status":"enqueued","tenant_id":"acme","log_id":"uuid-..."}
 
 # Test text ingestion
 curl -X POST https://your-api-url.amazonaws.com/ingest \
@@ -418,10 +375,10 @@ curl -X POST https://your-api-url.amazonaws.com/ingest \
   -d "Server restarted at 555-1234"
 
 # Expected response (202 Accepted):
-# {"status":"enqueued","tenant_id":"beta","log_id":"uuid-...","request_id":"..."}
+# {"status":"enqueued","tenant_id":"beta","log_id":"uuid-..."}
 ```
 
-## 📚 API Documentation
+## API Documentation
 
 ### POST /ingest
 
@@ -448,8 +405,7 @@ Content-Type: application/json
 {
   "status": "enqueued",
   "tenant_id": "acme",
-  "log_id": "custom-log-123",
-  "request_id": "aws-request-id"
+  "log_id": "custom-log-123"
 }
 ```
 
@@ -472,8 +428,7 @@ User 555-0199 performed action at 2023-10-27T10:00:00Z
 {
   "status": "enqueued",
   "tenant_id": "beta",
-  "log_id": "auto-generated-uuid",
-  "request_id": "aws-request-id"
+  "log_id": "auto-generated-uuid"
 }
 ```
 
@@ -483,19 +438,19 @@ User 555-0199 performed action at 2023-10-27T10:00:00Z
 
 ```json
 {
-  "detail": "Invalid JSON payload"
+  "error": "invalid JSON payload"
 }
 ```
 
 ```json
 {
-  "detail": "Missing X-Tenant-ID header"
+  "error": "missing X-Tenant-ID header"
 }
 ```
 
 ```json
 {
-  "detail": "Unsupported Content-Type. Use application/json or text/plain."
+  "error": "unsupported Content-Type. Use application/json or text/plain."
 }
 ```
 
@@ -503,99 +458,51 @@ User 555-0199 performed action at 2023-10-27T10:00:00Z
 
 ```json
 {
-  "detail": "Failed to enqueue message"
+  "error": "failed to enqueue message"
 }
 ```
 
-## 🧪 Testing
-
-### Unit Tests
+## Testing
 
 ```bash
-# Run all tests
-pytest tests/ -v
-
-# Run with coverage
-pytest tests/ --cov=app --cov-report=html
+go test ./...
 ```
 
-### Load Testing
-
-Test the system with high request volume:
-
-```bash
-# Install Apache Bench
-# macOS: brew install httpd
-# Ubuntu: apt-get install apache2-utils
-
-# Test JSON endpoint (1000 requests, 50 concurrent)
-ab -n 1000 -c 50 -p payload.json -T application/json \
-  https://your-api-url.amazonaws.com/ingest
-
-# Create payload.json:
-echo '{"tenant_id":"load-test","text":"Load test message"}' > payload.json
-```
-
-### Manual Verification of Tenant Isolation
-
-Check DynamoDB to verify tenant data isolation:
-
-```bash
-# List items for tenant "acme"
-aws dynamodb query \
-  --table-name memory-machine-tenant-logs \
-  --key-condition-expression "tenant_id = :tid" \
-  --expression-attribute-values '{":tid":{"S":"acme"}}'
-
-# List items for tenant "beta"
-aws dynamodb query \
-  --table-name memory-machine-tenant-logs \
-  --key-condition-expression "tenant_id = :tid" \
-  --expression-attribute-values '{":tid":{"S":"beta"}}'
-```
-
-Notice that each tenant's data is physically separate - you **must** specify the tenant_id to query.
-
-## 📁 Project Structure
+## Project Structure
 
 ```
 memory-machine/
-├── app/                          # Application source code
-│   ├── __init__.py              # Package initialization
-│   ├── config.py                # Environment-driven settings
-│   ├── main.py                  # Ingest Lambda (FastAPI app)
-│   ├── models.py                # Pydantic data models
-│   └── worker_handler.py        # Worker Lambda (SQS processor)
+├── cmd/
+│   ├── ingest/                # Ingest Lambda (API Gateway HTTP API handler)
+│   └── worker/                # Worker Lambda (SQS processor)
 │
-├── tests/                        # Test suite
-│   ├── test_main.py             # Ingest API tests
-│   └── test_worker_handler.py   # Worker processing tests
+├── internal/
+│   ├── config/                # Environment-driven settings
+│   └── models/                # Shared data models
 │
-├── infra/                        # Terraform infrastructure
-│   ├── main.tf                  # Main infrastructure definition
-│   ├── variables.tf             # Input variables
-│   └── outputs.tf               # Output values
+├── infra/                      # Terraform infrastructure
+│   ├── main.tf                # Main infrastructure definition
+│   ├── variables.tf           # Input variables
+│   └── outputs.tf             # Output values
 │
-├── dist/                         # Lambda deployment packages
-│   ├── ingest.zip               # Ingest Lambda package
-│   └── worker.zip               # Worker Lambda package
+├── dist/                       # Lambda deployment packages (ignored)
+│   ├── ingest-go.zip
+│   └── worker-go.zip
 │
-├── requirements.txt              # Python dependencies
-├── .gitignore                   # Git ignore patterns
-└── README.md                    # This file
+├── go.mod
+├── .gitignore
+└── README.md
 ```
 
-## ⚙️ Configuration
+## Configuration
 
 ### Environment Variables
-
-The application uses environment-driven configuration via Pydantic:
 
 | Variable | Description | Example |
 |----------|-------------|---------|
 | `AWS_REGION` | AWS region for all services | `us-west-1` |
 | `SQS_QUEUE_URL` | Full URL of the SQS queue | `https://sqs.us-west-1.amazonaws.com/123456789012/queue` |
-| `DYNAMODB_TABLE_NAME` | Name of the DynamoDB table | `memory-machine-tenant-logs` |
+| `DYNAMODB_TABLE_NAME` | Name of the DynamoDB table | `robust-data-processor-tenant-logs` |
 
 These are automatically set by Terraform during deployment.
 
@@ -605,10 +512,10 @@ Edit `infra/variables.tf` or create `terraform.tfvars`:
 
 ```hcl
 aws_region   = "us-west-1"
-project_name = "memory-machine"
+project_name = "robust-data-processor"
 ```
 
-## 📊 Monitoring
+## Monitoring
 
 ### CloudWatch Logs
 
@@ -616,32 +523,32 @@ Lambda functions automatically log to CloudWatch:
 
 ```bash
 # View Ingest Lambda logs
-aws logs tail /aws/lambda/memory-machine-ingest --follow
+aws logs tail /aws/lambda/<project_name>-ingest --follow
 
 # View Worker Lambda logs
-aws logs tail /aws/lambda/memory-machine-worker --follow
+aws logs tail /aws/lambda/<project_name>-worker --follow
 ```
 
 ### Key Metrics to Monitor
 
-1. **API Gateway**:
+1. API Gateway:
    - Request count
    - Latency (should be < 100ms)
    - 4xx/5xx errors
 
-2. **SQS Queue**:
+2. SQS Queue:
    - Messages in flight
    - Age of oldest message
    - Dead letter queue size
 
-3. **Lambda Functions**:
+3. Lambda Functions:
    - Invocation count
    - Error count
    - Duration
    - Concurrent executions
 
-4. **DynamoDB**:
-   - Read/Write capacity units
+4. DynamoDB:
+   - Read/write capacity units
    - Throttled requests
    - Item count by tenant_id
 
@@ -654,47 +561,33 @@ Create a dashboard to monitor all services:
 aws cloudwatch get-metric-statistics \
   --namespace AWS/Lambda \
   --metric-name Invocations \
-  --dimensions Name=FunctionName,Value=memory-machine-ingest \
+  --dimensions Name=FunctionName,Value=<project_name>-ingest \
   --start-time 2023-10-27T00:00:00Z \
   --end-time 2023-10-27T23:59:59Z \
   --period 3600 \
   --statistics Sum
 ```
 
-## 🔒 Security Considerations
+## Security Considerations
 
 ### Current Implementation
 
-- ✅ **No Authentication**: API is public (as required by specification)
-- ✅ **Encryption at Rest**: DynamoDB tables encrypted by default
-- ✅ **Encryption in Transit**: HTTPS enforced by API Gateway
-- ✅ **PII Redaction**: Phone numbers automatically masked
-- ✅ **Least Privilege IAM**: Lambda roles have minimal required permissions
+- No authentication: API is public (as required by specification)
+- Encryption at rest: DynamoDB tables encrypted by default
+- Encryption in transit: HTTPS enforced by API Gateway
+- PII redaction: phone numbers automatically masked
+- Least privilege IAM: Lambda roles have minimal required permissions
 
 ### Production Recommendations
 
 For production use, consider adding:
 
-1. **API Authentication**: 
-   - API Keys
-   - AWS IAM authentication
-   - OAuth 2.0 / JWT tokens
+1. API authentication (API keys, IAM auth, OAuth 2.0/JWT)
+2. Rate limiting with API Gateway usage plans
+3. Enhanced PII redaction (email, SSN, credit card numbers)
+4. Data retention with DynamoDB TTL or S3 archival
 
-2. **Rate Limiting**:
-   - API Gateway usage plans
-   - Per-tenant quotas
-
-3. **Enhanced PII Redaction**:
-   - Email addresses
-   - SSN
-   - Credit card numbers
-   - Custom regex patterns
-
-4. **Data Retention**:
-   - DynamoDB TTL for automatic deletion
-   - S3 archival for compliance
-
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
@@ -718,7 +611,7 @@ resource "aws_lambda_function" "worker" {
 
 ```bash
 aws logs filter-log-events \
-  --log-group-name /aws/lambda/memory-machine-worker \
+  --log-group-name /aws/lambda/<project_name>-worker \
   --filter-pattern "ERROR"
 ```
 
@@ -736,12 +629,12 @@ aws logs filter-log-events \
 
 ```bash
 aws lambda get-function-concurrency \
-  --function-name memory-machine-worker
+  --function-name <project_name>-worker
 ```
 
 Increase reserved concurrency if needed.
 
-## 📈 Performance Benchmarks
+## Performance Benchmarks
 
 Tested on AWS `us-west-1` with default configuration:
 
@@ -754,4 +647,3 @@ Tested on AWS `us-west-1` with default configuration:
 | Worker Processing (1000 chars) | 50.2s |
 | Concurrent Lambda Executions | 150 (during load test) |
 | DynamoDB Write Latency | < 10ms |
-

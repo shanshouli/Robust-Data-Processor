@@ -13,8 +13,8 @@ provider "aws" {
 }
 
 locals {
-  ingest_zip = "${path.module}/../dist/ingest.zip"
-  worker_zip = "${path.module}/../dist/worker.zip"
+  ingest_zip = "${path.module}/../dist/ingest-go.zip"
+  worker_zip = "${path.module}/../dist/worker-go.zip"
   common_tags = {
     Project = var.project_name
   }
@@ -136,8 +136,8 @@ resource "aws_lambda_function" "ingest" {
   filename      = local.ingest_zip
   source_code_hash = filebase64sha256(local.ingest_zip)
   role              = aws_iam_role.ingest_role.arn
-  handler           = "app.main.handler"
-  runtime           = "python3.11"
+  handler           = "bootstrap"
+  runtime           = "provided.al2023"
   timeout           = 10
   memory_size       = 256
 
@@ -156,8 +156,8 @@ resource "aws_lambda_function" "worker" {
   filename      = local.worker_zip
   source_code_hash = filebase64sha256(local.worker_zip)
   role              = aws_iam_role.worker_role.arn
-  handler           = "app.worker_handler.handler"
-  runtime           = "python3.11"
+  handler           = "bootstrap"
+  runtime           = "provided.al2023"
   timeout           = 300
   memory_size       = 256
 
