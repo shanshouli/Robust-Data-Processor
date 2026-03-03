@@ -1,0 +1,71 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@use '@angular/material' as mat;
+
+$dashboard-theme: mat.define-theme((
+  color: (
+    theme-type: light,
+    primary: mat.$azure-palette,
+    tertiary: mat.$rose-palette
+  ),
+  typography: (
+    plain-family: 'IBM Plex Sans',
+    brand-family: 'Space Grotesk'
+  ),
+  density: 0
+));
+
+@include mat.all-component-themes($dashboard-theme);
+
+:root {
+  color-scheme: light;
+  --surface-base: #0c111f;
+  --surface-raised: #111a2f;
+  --surface-panel: #151f38;
+  --accent-bright: #5f7bff;
+  --accent-soft: rgba(95, 123, 255, 0.15);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  background: radial-gradient(circle at top left, rgba(95, 123, 255, 0.18), transparent 45%),
+    radial-gradient(circle at 10% 80%, rgba(90, 174, 255, 0.15), transparent 40%),
+    #0a0f1f;
+  min-height: 100vh;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  letter-spacing: -0.02em;
+}
+
+.mat-mdc-form-field {
+  width: 100%;
+}
+
+.mat-mdc-table {
+  background: transparent;
+}
+
+.dashboard-panel {
+  background: var(--surface-panel);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  box-shadow: 0 18px 45px -25px rgba(7, 10, 28, 0.8);
+}
+
+.glass-chip {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+}

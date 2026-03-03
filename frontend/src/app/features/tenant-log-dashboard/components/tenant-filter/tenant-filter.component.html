@@ -1,0 +1,11 @@
+<mat-form-field appearance="fill" class="min-w-[220px]">
+  <mat-label>Active tenant</mat-label>
+  <mat-select
+    [value]="selected"
+    (selectionChange)="selectedChange.emit($event.value)"
+  >
+    <mat-option *ngFor="let tenant of tenants" [value]="tenant">
+      {{ tenant | uppercase }}
+    </mat-option>
+  </mat-select>
+</mat-form-field>

@@ -1,0 +1,14 @@
+:host {
+  display: block;
+}
+
+th.mat-mdc-header-cell {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.mat-mdc-row:nth-child(even) {
+  background: rgba(255, 255, 255, 0.02);
+}

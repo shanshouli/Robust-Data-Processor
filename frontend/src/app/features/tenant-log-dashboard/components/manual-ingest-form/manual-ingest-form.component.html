@@ -1,0 +1,50 @@
+<section class="dashboard-panel px-5 py-4">
+  <div class="flex items-center justify-between">
+    <h2 class="text-lg font-semibold text-white">Manual Ingest</h2>
+    <span class="text-xs text-graphite-300">/ingest</span>
+  </div>
+
+  <form class="mt-4 flex flex-col gap-4" [formGroup]="form" (ngSubmit)="submit()">
+    <mat-form-field appearance="fill">
+      <mat-label>Tenant ID</mat-label>
+      <input matInput formControlName="tenant_id" placeholder="acme" />
+      <mat-error *ngIf="form.controls.tenant_id.invalid">Tenant ID is required.</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="fill">
+      <mat-label>Log ID (optional)</mat-label>
+      <input matInput formControlName="log_id" placeholder="log-123" />
+    </mat-form-field>
+
+    <div class="flex flex-col gap-2">
+      <label class="text-xs uppercase tracking-[0.2em] text-graphite-300">Payload format</label>
+      <mat-radio-group class="flex flex-wrap gap-4" formControlName="format">
+        <mat-radio-button value="json">JSON</mat-radio-button>
+        <mat-radio-button value="text">Plain Text</mat-radio-button>
+      </mat-radio-group>
+    </div>
+
+    <mat-form-field appearance="fill">
+      <mat-label>Log payload</mat-label>
+      <textarea
+        matInput
+        rows="5"
+        formControlName="text"
+        placeholder="User 555-0199 accessed system"
+      ></textarea>
+      <mat-hint align="end">{{ charCount() }} characters</mat-hint>
+      <mat-error *ngIf="form.controls.text.invalid">Please enter at least 5 characters.</mat-error>
+    </mat-form-field>
+
+    <button
+      mat-flat-button
+      color="primary"
+      type="submit"
+      [disabled]="loading"
+      class="!h-11 !rounded-full"
+    >
+      <mat-icon>cloud_upload</mat-icon>
+      Send to Ingest
+    </button>
+  </form>
+</section>

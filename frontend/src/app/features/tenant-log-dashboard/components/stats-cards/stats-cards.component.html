@@ -1,0 +1,23 @@
+<div class="grid gap-4 md:grid-cols-3">
+  <app-metric-card
+    title="Total Logs Processed"
+    [value]="stats.totalProcessed | number"
+    subtitle="Last 24h"
+    tone="success"
+  ></app-metric-card>
+
+  <app-metric-card
+    title="Error Rate (DLQ)"
+    [value]="stats.errorRate + '%'"
+    subtitle="Rolling window"
+    tone="warn"
+  ></app-metric-card>
+
+  <app-metric-card
+    title="System Latency"
+    [value]="stats.latencyMs + ' ms'"
+    subtitle="P95 pipeline"
+  ></app-metric-card>
+</div>
+
+<mat-progress-bar *ngIf="loading" mode="indeterminate" class="mt-3"></mat-progress-bar>
